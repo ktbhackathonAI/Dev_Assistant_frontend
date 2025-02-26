@@ -1,4 +1,5 @@
 import { createTheme } from "@mui/material/styles";
+import { oneDark, oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 // ✅ 라이트 테마 (White)
 const lightTheme = createTheme({
@@ -15,6 +16,9 @@ const lightTheme = createTheme({
       primary: "#000000",
       secondary: "#555555",
     },
+  },
+  syntaxHighlighter: {
+    theme: oneLight, 
   },
 });
 
@@ -33,6 +37,9 @@ const darkTheme = createTheme({
       primary: "#ffffff",
       secondary: "#BBBBBB",
     },
+  },
+  syntaxHighlighter: {
+    theme: oneDark, 
   },
 });
 
