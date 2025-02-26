@@ -1,12 +1,9 @@
 import React, { useState, useContext, useRef, useEffect } from "react";
-
 import { useParams } from "react-router-dom";
 import { Box, TextField, IconButton, List, ListItem, ListItemText, Paper } from "@mui/material";
 import { Send } from "@mui/icons-material";
 import { ThemeContext } from "../ThemeContext";
 import { useTheme } from "@mui/material/styles";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import CodeMessage from "../MessageTypes/CodeMessage";
 import LinkMessage from "../MessageTypes/LinkMessage";
 import FolderMessage from "../MessageTypes/FolderMessage";
@@ -15,34 +12,44 @@ import UrlMessage from "../MessageTypes/UrlMessage";
 const Chat = () => {
   const { darkMode } = useContext(ThemeContext);
   const theme = useTheme();
-  const [requests, setRequests] = useState([]);
   const [input, setInput] = useState("");
   const [isServerTyping, setIsServerTyping] = useState(false);
-  const [step, setStep] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
   const { roomId } = useParams();
   const [messages, setMessages] = useState([]);
 
-  // ✅ 서버에서 오는 데이터 테스트용
-  const mockServerData = [
-    { type: "text", role: "server", content: "프로젝트가 생성되었습니다!" },
-    { type: "folder", role: "server", content: "├── src/\n│   ├── app.js\n│   ├── routes/\n│   │   ├── api.js\n├── package.json" },
-    { type: "url", role: "server", content: "GET /api/project/status → 서버 상태 확인\nPOST /api/project/data → 데이터 저장" },
-    { type: "code", role: "server", content: "const express = require(\"express\");\nconst app = express();\n\napp.get(\"/\", (req, res) => {\n  res.send(\"Hello, World!\");\n});\n\napp.listen(3000, () => {\n  console.log(\"Server running on port 3000\");\n});" },
-    { type: "link", role: "server", content: "https://github.com/user/project" }
-  ];
+  // 서버 응답을 기대하는 형식으로 변환하는 함수
+  const transformServerResponse = (serverData) => {
+    const { content, sender } = serverData;
+    // content를 기반으로 type을 추정하거나, 이미 정의된 형식을 따름
+    if (content.startsWith("http")) {
+      return { type: "link", role: "server", content };
+    } else if (content.includes("→")) {
+      return { type: "url", role: "server", content };
+    } else if (content.includes("const") || content.includes("function")) {
+      return { type: "code", role: "server", content };
+    } else if (content.includes("├──")) {
+      return { type: "folder", role: "server", content };
+    } else {
+      return { type: "text", role: "server", content };
+    }
+  };
 
   useEffect(() => {
-    // 기존 대화 내역 불러오기
     const fetchMessages = async () => {
-      const response = await fetch(`http://localhost:8000/chat/rooms/${roomId}/messages`);
-      if (response.ok) {
-        const data = await response.json();
-        console.log(data)
-        setMessages(data);
-      } else {
-        console.error("대화방 메시지 목록을 가져오는 데 실패했습니다.");
+      try {
+        const response = await fetch(`http://localhost:8000/chat/rooms/${roomId}/messages`);
+        if (response.ok) {
+          const data = await response.json();
+          // 서버에서 반환된 데이터를 변환
+          const transformedMessages = data.map(transformServerResponse);
+          console.log(transformedMessages);
+          setMessages(transformedMessages);
+        } else {
+          console.error("대화방 메시지 목록을 가져오는 데 실패했습니다.");
+        }
+      } catch (error) {
+        console.error("메시지 가져오기 오류:", error);
       }
     };
 
@@ -52,67 +59,124 @@ const Chat = () => {
   const handleSendRequest = async () => {
     if (input.trim() === "") return;
 
-    setRequests((prev) => [...prev, { text: input, sender: "user" }]);
+    const newUserMessage = { type: "text", role: "user", content: input };
+    setMessages((prev) => [...prev, newUserMessage]);
     setIsServerTyping(true);
+
     try {
-      console.log("Sending:", input, "to room:", roomId);  // 디버깅용 로그
       const response = await fetch(`http://localhost:8000/chat/rooms/${roomId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: input })
+        body: JSON.stringify({ content: input }),
       });
-      if (response.ok) {
-        const newMessages = await response.json();
-        console.log("Response:", newMessages);  // 응답 확인용
-        setRequests((prev) => [...prev, ...newMessages]);
-      } else {
-        const errorText = await response.text();
-        console.error("Error:", response.status, errorText);  // 오류 상세 출력
-        setRequests((prev) => [
-          ...prev,
-          { text: `❌ 메시지 전송에 실패했습니다: ${response.status}`, sender: "system" }
-        ]);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let newServerMessages = [];
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value);
+        const lines = chunk.split("\n").filter((line) => line.trim());
+        for (const line of lines) {
+          const message = JSON.parse(line); // {content, sender, status}
+          const transformedMessage = transformServerResponse(message);
+          console.log(transformedMessage);
+          newServerMessages.push(transformedMessage);
+        }
+      }
+      setMessages((prev) => [...prev, ...newServerMessages]);
     } catch (error) {
-      console.error("Fetch error:", error);
-      setRequests((prev) => [
+      console.error(error);
+      setMessages((prev) => [
         ...prev,
-        { text: "❌ 서버 오류가 발생했습니다.", sender: "system" }
+        { type: "text", role: "system", content: "❌ 서버 오류가 발생했습니다." },
       ]);
     }
     setIsServerTyping(false);
     setInput("");
-};
+  };
 
-
-  // ✅ 자동 스크롤
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [requests]);
+  }, [messages]);
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", height: "calc(100vh - 40px)", bgcolor: theme.palette.background.default, color: theme.palette.text.primary, p: 2, mt: 2, mb: 2 }}>
-      {/* ✅ 채팅 내역 */}
-      <Paper sx={{ flexGrow: 1, overflowY: "auto", p: 2, borderRadius: 2, bgcolor: darkMode ? "#1E1E1E" : "#f5f5f5", "&::-webkit-scrollbar": { display: "none" } }}>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        height: "calc(100vh - 40px)",
+        bgcolor: theme.palette.background.default,
+        color: theme.palette.text.primary,
+        p: 2,
+        mt: 2,
+        mb: 2,
+      }}
+    >
+      <Paper
+        sx={{
+          flexGrow: 1,
+          overflowY: "auto",
+          p: 2,
+          borderRadius: 2,
+          bgcolor: darkMode ? "#1E1E1E" : "#f5f5f5",
+          "&::-webkit-scrollbar": { display: "none" },
+        }}
+      >
         <List>
-          {requests.map((msg, index) => (
-            <ListItem key={index} sx={{ justifyContent: msg.role === "user" ? "flex-end" : "flex-start", textAlign: msg.role === "user" ? "right" : "left", mb: 1 }}>
-              <Paper sx={{
-                p: 1.5,
-                borderRadius: 2,
-                bgcolor: msg.role === "user" ? theme.palette.primary.main :
-                          (msg.type === "text" ? "#ddd" : darkMode ? "#1E1E1E" : "#f5f5f5"),
-                color: msg.role === "user" ? "#fff" :
-                        (msg.type === "text" ? "#000" : darkMode ? "#fff" : "#000"),
-                boxShadow: msg.role === "server" && msg.type !== "text" ? "none" : theme.shadows[1],
-                minWidth: msg.role === "server" && msg.type !== "text" ? "50%" : "auto",
-              }}>
-                {msg.type === "code" ? <CodeMessage content={msg.content} /> :
-                 msg.type === "link" ? <LinkMessage content={msg.content} /> :
-                 msg.type === "folder" ? <FolderMessage content={msg.content} /> :
-                 msg.type === "url" ? <UrlMessage content={msg.content} /> :
-                 <ListItemText
-                    primary={[msg.content]}/>}
+          {messages.map((msg, index) => (
+            <ListItem
+              key={index}
+              sx={{
+                justifyContent: msg.role === "user" ? "flex-end" : "flex-start",
+                textAlign: msg.role === "user" ? "right" : "left",
+                mb: 1,
+              }}
+            >
+              <Paper
+                sx={{
+                  p: 1.5,
+                  borderRadius: 2,
+                  bgcolor:
+                    msg.role === "user"
+                      ? theme.palette.primary.main
+                      : msg.type === "text"
+                      ? "#ddd"
+                      : darkMode
+                      ? "#1E1E1E"
+                      : "#f5f5f5",
+                  color:
+                    msg.role === "user"
+                      ? "#fff"
+                      : msg.type === "text"
+                      ? "#000"
+                      : darkMode
+                      ? "#fff"
+                      : "#000",
+                  boxShadow:
+                    msg.role === "server" && msg.type !== "text"
+                      ? "none"
+                      : theme.shadows[1],
+                  minWidth: msg.role === "server" && msg.type !== "text" ? "50%" : "auto",
+                }}
+              >
+                {msg.type === "code" ? (
+                  <CodeMessage content={msg.content} />
+                ) : msg.type === "link" ? (
+                  <LinkMessage content={msg.content} />
+                ) : msg.type === "folder" ? (
+                  <FolderMessage content={msg.content} />
+                ) : msg.type === "url" ? (
+                  <UrlMessage content={msg.content} />
+                ) : (
+                  <ListItemText primary={msg.content} />
+                )}
               </Paper>
             </ListItem>
           ))}
@@ -120,14 +184,13 @@ const Chat = () => {
         </List>
       </Paper>
 
-      {/* 입력창 */}
       <Box
         sx={{
           display: "flex",
           mt: 2,
           p: 1,
           borderRadius: 2,
-          bgcolor: theme.palette.background.paper
+          bgcolor: theme.palette.background.paper,
         }}
       >
         <TextField
@@ -136,9 +199,7 @@ const Chat = () => {
           placeholder="입력하세요..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyPress={(e) =>
-            e.key === "Enter" && !isServerTyping && handleSendRequest()
-          }
+          onKeyPress={(e) => e.key === "Enter" && !isServerTyping && handleSendRequest()}
           sx={{
             bgcolor: darkMode ? "#2C2C2C" : "#fff",
             color: theme.palette.text.primary,
@@ -146,8 +207,8 @@ const Chat = () => {
             "& .MuiOutlinedInput-root": {
               "& fieldset": { borderColor: darkMode ? "#555" : "#ccc" },
               "&:hover fieldset": { borderColor: darkMode ? "#888" : "#999" },
-              "&.Mui-focused fieldset": { borderColor: theme.palette.primary.main }
-            }
+              "&.Mui-focused fieldset": { borderColor: theme.palette.primary.main },
+            },
           }}
           disabled={isServerTyping}
         />
