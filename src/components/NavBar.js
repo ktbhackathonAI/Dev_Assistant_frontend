@@ -1,28 +1,11 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import PropTypes from "prop-types";
-import {
-  Box,
-  CssBaseline,
-  Divider,
-  Drawer,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Toolbar,
-  Typography,
-  Button,
-  Menu,
-  MenuItem,
-  IconButton,
-  Tooltip,
-  Switch,
-} from "@mui/material";
+import { Box, CssBaseline, Divider, Drawer, Toolbar, Typography, Button, IconButton, Tooltip } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { Add, Chat, AccountCircle, Logout, Brightness4, Brightness7, Hexagon, Search, Edit } from "@mui/icons-material";
+import { Add, Chat, Hexagon, Brightness7, Brightness4 } from "@mui/icons-material";  // Importing missing icons
 import { ThemeContext } from "../ThemeContext";
 import { useTheme } from "@mui/material/styles";
+import RoomList from "./RoomList";  // RoomList 컴포넌트 가져오기
 
 const drawerWidth = 240;
 
@@ -30,78 +13,74 @@ function ResponsiveDrawer({ open, toggleDrawer }) {
   const navigate = useNavigate();
   const { darkMode, toggleTheme } = useContext(ThemeContext);
   const theme = useTheme();
-  const [anchorEl, setAnchorEl] = useState(null);
-  const [expandedChatId, setExpandedChatId] = useState(null); // 현재 확장된 chat ID 저장
-  const [chats, setChats] = useState([
-    { id: 1, title: "지난 대화 1", repo: 'https://github.com/user/{name}'},
-    { id: 3, title: "지난 대화 2", repo: 'https://github.com/user/{name}'},
-    { id: 3, title: "지난 대화 3" },
-  ]);
+
+  const [chats, setChats] = useState([]);  // 대화방 목록 상태
+  const [messages, setMessages] = useState([]);  // 대화방 메시지 상태
 
   const isLoggedIn = !!localStorage.getItem("token");
 
-  const handleAccountMenuOpen = (event) => {
-    setAnchorEl(event.currentTarget);
+  // Define fetchRooms function here
+  const fetchRooms = async () => {
+    const response = await fetch('http://localhost:8000/chat/rooms');
+    if (response.ok) {
+      const rooms = await response.json();
+      setChats(rooms);  // 대화방 목록을 상태에 업데이트
+    } else {
+      console.error("대화방 목록을 가져오는 데 실패했습니다.");
+    }
   };
 
-  const handleAccountMenuClose = () => {
-    setAnchorEl(null);
+  useEffect(() => {
+    // 대화방 목록을 초기 로딩
+    fetchRooms();  // 페이지 초기화 시 대화방 목록을 가져옴
+  }, []);  // 빈 배열을 전달하여 컴포넌트 마운트 시 한 번만 호출되도록
+
+  const handleCreateRoom = async () => {
+    const repoUrl = "https://github.com/user/test";  // 예시로 제공된 URL
+    const response = await fetch('http://localhost:8000/chat/rooms', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ repo_url: repoUrl }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log("대화방 생성 성공:", data);
+
+      // 대화방 목록 갱신
+      await fetchRooms();  // 대화방 목록 갱신
+
+      // 생성된 대화방으로 이동
+      navigate(`/rooms/${data.room_id}`);  // room_id를 사용하여 해당 대화방으로 이동
+    } else {
+      console.error("대화방 생성 실패");
+    }
   };
 
   const handleLogout = () => {
     localStorage.removeItem("token");
-    handleAccountMenuClose();
     navigate("/login");
   };
 
-  const handleNewChat = () => {
-    const newChat = { id: chats.length + 1, title: `새로운 채팅 ${chats.length + 1}` };
-    setChats([newChat, ...chats]);
-  };
-
-  const toggleRepoVisibility = (chatId) => {
-    setExpandedChatId(expandedChatId === chatId ? null : chatId); // 토글 기능
-  };
-
   const drawer = (
-    <Box
-      sx={{
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        bgcolor: theme.palette.background.default,
-        color: theme.palette.text.primary,
-      }}
-    >
-    {/* ✅ 상단 네비게이션 헤더 */}
-      <Toolbar
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          p: 2,
-          paddingTop: 0,
-          paddingBottom: 0,
-
-        }}
-      >
-        {/* ✅ 닫기 버튼 */}
+    <Box sx={{ height: "100%", display: "flex", flexDirection: "column", bgcolor: theme.palette.background.default, color: theme.palette.text.primary }}>
+      <Toolbar sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", p: 2, paddingTop: 0, paddingBottom: 0 }}>
         <Tooltip>
-        <IconButton sx={{ color: 'transparent' }}>
-          <Hexagon />
-        </IconButton>
+          <IconButton sx={{ color: 'transparent' }}>
+            <Hexagon />
+          </IconButton>
         </Tooltip>
-         <Typography variant="h6">JARVIS</Typography>
+        <Typography variant="h6">JARVIS</Typography>
       </Toolbar>
       <Divider />
 
-      {/* 새로운 채팅 버튼 */}
+      {/* 새로운 대화방 생성 버튼 */}
       <Box sx={{ p: 2 }}>
         <Button
           fullWidth
           variant="contained"
-          startIcon={<Add />}
-          onClick={handleNewChat}
+          startIcon={<Chat />}
+          onClick={handleCreateRoom}
           sx={{
             borderRadius: 5,
             bgcolor: theme.palette.primary.main,
@@ -109,37 +88,13 @@ function ResponsiveDrawer({ open, toggleDrawer }) {
             ":hover": { bgcolor: theme.palette.primary.dark },
           }}
         >
-          새로운 대화
+          새로운 코드 제작
         </Button>
       </Box>
       <Divider />
 
-      {/* 대화 목록 */}
-      <List sx={{ flexGrow: 1, overflowY: "auto" }}>
-        {chats.map((chat) => (
-          <React.Fragment key={chat.id}> 
-            <ListItem disablePadding>
-              <ListItemButton onClick={() => {}}>
-                <ListItemText primary={chat.title} />
-                <IconButton onClick={() => toggleRepoVisibility(chat.id)} sx={{ ml: 2 }}>
-                  <Typography variant="body2" sx={{ fontSize: 16 }}>
-                  {expandedChatId === chat.id ? '▼' : '▶'}
-                </Typography>
-                </IconButton>
-              </ListItemButton>
-            </ListItem>
-
-            {/* repo가 있고, 해당 chat이 확장된 경우에만 표시 */}
-            {expandedChatId === chat.id && chat.repo && (
-              <Box sx={{ pl: 4, pt: 1 }}>
-                <Typography variant="body2" color="textSecondary">
-                  {chat.repo}
-                </Typography>
-              </Box>
-            )}
-          </React.Fragment>
-    ))}
-      </List>
+      {/* 대화방 목록 */}
+      <RoomList chats={chats} setChats={setChats} setMessages={setMessages} />
 
       {/* 다크모드 토글 버튼 */}
       <Box sx={{ p: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -153,52 +108,7 @@ function ResponsiveDrawer({ open, toggleDrawer }) {
 
       {/* 사용자 계정 메뉴 */}
       <Box sx={{ p: 2 }}>
-      <List>
-        {/* 계정 설정 버튼 */}
-        <ListItem disablePadding>
-          <ListItemButton
-            onClick={handleAccountMenuOpen}
-            sx={{
-              minHeight: 20, // 🔥 크기 조정 (기본보다 크게)
-              px: 2, // 좌우 패딩 추가
-              borderRadius: 2, // 둥글게
-              "&:hover": { bgcolor: "rgba(0, 0, 0, 0.08)" },
-            }}
-          >
-            <ListItemIcon sx={{ minWidth: 48 }}> {/* 🔥 아이콘 크기 조정 */}
-              <AccountCircle sx={{ fontSize: "2rem" }} /> {/* 🔥 아이콘 확대 */}
-            </ListItemIcon>
-            <ListItemText
-              primary="계정 설정"
-              primaryTypographyProps={{ fontSize: "1.1rem", fontWeight: "bold" }} // 🔥 글자 크기 증가
-            />
-          </ListItemButton>
-        </ListItem>
-
-        {/* 로그아웃 버튼 (로그인 상태일 때만 표시) */}
-        {isLoggedIn && (
-          <ListItem disablePadding>
-            <ListItemButton
-              onClick={handleLogout}
-              sx={{
-                minHeight: 20, // 🔥 높이 증가
-                px: 2, // 좌우 여백
-                borderRadius: 2, // 둥글게
-                "&:hover": { bgcolor: "rgba(0, 0, 0, 0.08)" },
-              }}
-            >
-              <ListItemIcon sx={{ minWidth: 48 }}>
-                <Logout sx={{ fontSize: "2rem" }} /> {/* 🔥 아이콘 확대 */}
-              </ListItemIcon>
-              <ListItemText
-                primary="로그아웃"
-                primaryTypographyProps={{ fontSize: "1.1rem", fontWeight: "bold" }} // 🔥 글자 크기 증가
-              />
-            </ListItemButton>
-          </ListItem>
-        )}
-        </List>
-
+        <Button onClick={handleLogout}>로그아웃</Button>
       </Box>
     </Box>
   );
@@ -206,33 +116,17 @@ function ResponsiveDrawer({ open, toggleDrawer }) {
   return (
     <Box sx={{ display: "flex" }}>
       <CssBaseline />
-      <Drawer
-        variant="persistent" // 고정형 드로어
-        sx={{
-          "& .MuiDrawer-paper": {
-            width: drawerWidth,
-          },
-        }}
-        open={open} // 드로어 상태 제어
-      >
+      <Drawer variant="persistent" sx={{ "& .MuiDrawer-paper": { width: drawerWidth } }} open={open}>
         {drawer}
       </Drawer>
 
-      <Box
-        sx={{
-          position: "absolute",
-          top: 12,
-          left: 24,
-          zIndex: 2200, // 다른 요소들 위에 표시되도록 설정
-        }}
-      >
+      <Box sx={{ position: "absolute", top: 12, left: 24, zIndex: 2200 }}>
         <Tooltip title={open ? "사이드바 닫기" : "사이드바 열기"} arrow>
           <IconButton onClick={toggleDrawer}>
             <Hexagon />
           </IconButton>
         </Tooltip>
       </Box>
-
     </Box>
   );
 }
