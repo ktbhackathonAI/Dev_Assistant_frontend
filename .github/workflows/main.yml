@@ -13,6 +13,11 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3  # GitHub 레포지토리 코드 가져오기
 
+      - name: Create .env File
+        run: |
+          echo "REACT_APP_API_URL=${{ secrets.ENV_REACT_APP_API_URL }}" >> .env
+          echo "REACT_APP_ENV=${{ secrets.ENV_REACT_APP_ENV }}" >> .env
+
       - name: Configure Docker Daemon (Allow HTTP Registry)
         run: |
           echo '{ "insecure-registries": ["${{ secrets.JARVIS_DOMAIN }}:5000"] }' | sudo tee /etc/docker/daemon.json
@@ -25,7 +30,9 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          docker build -t ${{ secrets.JARVIS_DOMAIN }}:5000/react-fe .
+          docker build --build-arg REACT_APP_API_URL=${{ secrets.ENV_REACT_APP_API_URL }} \
+            --build-arg REACT_APP_ENV=${{ secrets.ENV_REACT_APP_ENV }} \
+            -t ${{ secrets.JARVIS_DOMAIN }}:5000/react-fe .
 
       - name: Push Docker Image to Private Registry
         run: |
@@ -46,4 +53,6 @@ jobs:
             docker stop react-container || true
             docker rm react-container || true
             docker run -d --name react-container --restart=always -p 3000:80 \
+              -e REACT_APP_API_URL=${{ secrets.ENV_REACT_APP_API_URL }} \
+              -e REACT_APP_ENV=${{ secrets.ENV_REACT_APP_ENV }} \
               ${{ secrets.JARVIS_DOMAIN }}:5000/react-fe
