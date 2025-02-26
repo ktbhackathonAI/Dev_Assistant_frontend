@@ -9,7 +9,7 @@ const Header = ({ drawerOpen, drawerWidth }) => {
     <Box
       sx={{
         width: `calc(100% - ${drawerOpen ? drawerWidth : 0}px)`, // 사이드 바 상태에 따라 너비 조정
-        height: theme.mixins.toolbar.minHeight,
+        height: '64px',
         position: 'fixed',
         top: 0,
         left: drawerOpen ? `${drawerWidth}px` : '0',
