@@ -31,35 +31,11 @@ function ResponsiveDrawer({ open, toggleDrawer }) {
   const { darkMode, toggleTheme } = useContext(ThemeContext);
   const theme = useTheme();
   const [anchorEl, setAnchorEl] = useState(null);
+  const [expandedChatId, setExpandedChatId] = useState(null); // 현재 확장된 chat ID 저장
   const [chats, setChats] = useState([
-    { id: 1, title: "새로운 채팅" },
-    { id: 2, title: "지난 대화 1" },
-    { id: 3, title: "지난 대화 2" },
+    { id: 1, title: "지난 대화 1", repo: 'https://github.com/user/{name}'},
+    { id: 3, title: "지난 대화 2", repo: 'https://github.com/user/{name}'},
     { id: 3, title: "지난 대화 3" },
-    { id: 3, title: "지난 대화 4" },
-    { id: 3, title: "지난 대화 5" },
-    { id: 3, title: "지난 대화 6" },
-    { id: 3, title: "지난 대화 7" },
-    { id: 3, title: "지난 대화 8" },
-    { id: 3, title: "지난 대화 2" },
-    { id: 3, title: "지난 대화 2" },
-    { id: 3, title: "지난 대화 2" },
-    { id: 3, title: "지난 대화 2" },
-    { id: 3, title: "지난 대화 2" },
-    { id: 3, title: "지난 대화 2" },
-    { id: 3, title: "지난 대화 2" },
-    { id: 3, title: "지난 대화 2" },
-    { id: 3, title: "지난 대화 2" },
-    { id: 3, title: "지난 대화 2" },
-    { id: 3, title: "지난 대화 2" },
-    { id: 3, title: "지난 대화 2" },
-    { id: 3, title: "지난 대화 2" },
-    { id: 3, title: "지난 대화 2" },
-    { id: 3, title: "지난 대화 2" },
-    { id: 3, title: "지난 대화 2" },
-    { id: 3, title: "지난 대화 2" },
-    { id: 3, title: "지난 대화 2" },
-
   ]);
 
   const isLoggedIn = !!localStorage.getItem("token");
@@ -81,6 +57,10 @@ function ResponsiveDrawer({ open, toggleDrawer }) {
   const handleNewChat = () => {
     const newChat = { id: chats.length + 1, title: `새로운 채팅 ${chats.length + 1}` };
     setChats([newChat, ...chats]);
+  };
+
+  const toggleRepoVisibility = (chatId) => {
+    setExpandedChatId(expandedChatId === chatId ? null : chatId); // 토글 기능
   };
 
   const drawer = (
@@ -111,16 +91,7 @@ function ResponsiveDrawer({ open, toggleDrawer }) {
           <Hexagon />
         </IconButton>
         </Tooltip>
-        <Tooltip title="채팅 검색" arrow>
-        <IconButton color="black">
-          <Search />
-        </IconButton>
-        </Tooltip>
-        <Tooltip title="This is an information icon" arrow>
-        <IconButton color="black" onClick={() => navigate("/new-post")}>
-          <Edit />
-        </IconButton>
-        </Tooltip>
+         <Typography variant="h6">JARVIS</Typography>
       </Toolbar>
       <Divider />
 
@@ -146,15 +117,28 @@ function ResponsiveDrawer({ open, toggleDrawer }) {
       {/* 대화 목록 */}
       <List sx={{ flexGrow: 1, overflowY: "auto" }}>
         {chats.map((chat) => (
-          <ListItem key={chat.id} disablePadding>
-            <ListItemButton onClick={() => navigate(`/chat/${chat.id}`)}>
-              <ListItemIcon>
-                <Chat />
-              </ListItemIcon>
-              <ListItemText primary={chat.title} />
-            </ListItemButton>
-          </ListItem>
-        ))}
+          <React.Fragment key={chat.id}> 
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => {}}>
+                <ListItemText primary={chat.title} />
+                <IconButton onClick={() => toggleRepoVisibility(chat.id)} sx={{ ml: 2 }}>
+                  <Typography variant="body2" sx={{ fontSize: 16 }}>
+                  {expandedChatId === chat.id ? '▼' : '▶'}
+                </Typography>
+                </IconButton>
+              </ListItemButton>
+            </ListItem>
+
+            {/* repo가 있고, 해당 chat이 확장된 경우에만 표시 */}
+            {expandedChatId === chat.id && chat.repo && (
+              <Box sx={{ pl: 4, pt: 1 }}>
+                <Typography variant="body2" color="textSecondary">
+                  {chat.repo}
+                </Typography>
+              </Box>
+            )}
+          </React.Fragment>
+    ))}
       </List>
 
       {/* 다크모드 토글 버튼 */}
