@@ -8,7 +8,7 @@ WORKDIR /usr/src/app
 COPY package.json ./
 
 # 4. yarn.lock 파일이 있을 경우만 복사
-COPY yarn.lock ./ || true
+# COPY yarn.lock ./ || true
 
 # 5. 패키지 설치
 RUN yarn install --frozen-lockfile
