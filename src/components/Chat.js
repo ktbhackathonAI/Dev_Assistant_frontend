@@ -7,6 +7,7 @@ import CodeMessage from "../MessageTypes/CodeMessage";
 import LinkMessage from "../MessageTypes/LinkMessage";
 import FolderMessage from "../MessageTypes/FolderMessage";
 import UrlMessage from "../MessageTypes/UrlMessage";
+import Typewriter from "typewriter-effect";
 
 const Chat = () => {
   const { darkMode } = useContext(ThemeContext);
@@ -89,7 +90,18 @@ const Chat = () => {
                  msg.type === "folder" ? <FolderMessage content={msg.content} /> :
                  msg.type === "url" ? <UrlMessage content={msg.content} /> :
                  <ListItemText
-                    primary={[msg.content]}/>}
+                  primary={
+                    msg.type === "text" ? (
+                      <Typewriter
+                        options={{
+                          strings: [msg.content], 
+                          autoStart: true,
+                          delay: 50, 
+                          cursor: "", 
+                        }}
+                      />
+                    ) : msg.content
+                  }/>}
               </Paper>
             </ListItem>
           ))}

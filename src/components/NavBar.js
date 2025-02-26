@@ -213,7 +213,7 @@ function ResponsiveDrawer({ open, toggleDrawer }) {
             width: drawerWidth,
           },
         }}
-        open={open} // 드로어 상태 제어
+        open={open}
       >
         {drawer}
       </Drawer>

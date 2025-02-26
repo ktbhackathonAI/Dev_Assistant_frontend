@@ -10,24 +10,25 @@ const LinkMessage = ({ content }) => {
 
     return(
         <Box>
-            <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+            <Box sx={{ display: "flex", alignItems: "center" }}>
             <Box
                 component="img"
                 src={darkMode ? githubLight : githubDark}
                 alt="GitHub Logo"
-                sx={{ width: 30, height: 30, mr: 1}}
+                sx={{ width: 28, height: 28, mr: 1}}
             />
             <ReactMarkdown>{`### 깃허브 주소`}</ReactMarkdown>
             </Box>
-                <ReactMarkdown>{`---`}</ReactMarkdown>
-                <ReactMarkdown
+            <ReactMarkdown>{`---`}</ReactMarkdown>
+            <ReactMarkdown
             components={{
                 a: ({ node, ...props }) => (
                 <Link
                     {...props}
                     sx={{
                     color: darkMode ? "#fff" : "#1976d2", 
-                    textDecoration: "none", 
+                    textDecoration: "none",
+                    ":hover": { textDecoration: "underline" }
                     }}
                 />
                 ),
@@ -35,7 +36,7 @@ const LinkMessage = ({ content }) => {
             >
             {`🔗 [${content}](${content})`}
             </ReactMarkdown>
-            </Box>
+        </Box>
     );
 };
 
