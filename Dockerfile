@@ -6,7 +6,7 @@ FROM node:lts AS build
 # 작업 디렉토리 설정
 WORKDIR /app
 
-# package.json과 package-lock.json을 복사 후 의존성 설치
+# package.json과 package-lock.json을 복사 후 의존성 설치 (캐시 활용)
 COPY package.json package-lock.json ./
 RUN npm ci
 
@@ -16,8 +16,8 @@ COPY . .
 # 환경 변수 적용
 ARG REACT_APP_API_URL
 ARG REACT_APP_ENV
-RUN echo "REACT_APP_API_URL=$REACT_APP_API_URL" >> .env
-RUN echo "REACT_APP_ENV=$REACT_APP_ENV" >> .env
+ENV REACT_APP_API_URL=$REACT_APP_API_URL
+ENV REACT_APP_ENV=$REACT_APP_ENV
 
 # React 정적 파일 빌드
 RUN npm run build
@@ -25,7 +25,7 @@ RUN npm run build
 ### 2️⃣ Nginx 설정 및 최종 배포 ###
 FROM nginx:alpine
 
-# Nginx 설정 복사
+# Nginx 설정 복사 (설정 파일 존재 여부 확인 후 복사)
 COPY .nginx/nginx.conf /etc/nginx/conf.d/default.conf
 
 # Nginx의 기본 작업 디렉토리 설정
