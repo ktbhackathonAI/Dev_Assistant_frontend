@@ -1,27 +1,58 @@
-# 1. Node.js에서 React 빌드
-FROM node:18 AS build
+# syntax=docker/dockerfile:1.4
 
-# 2. 작업 디렉토리 설정
-WORKDIR /usr/src/app
+# 1. For build React app
+FROM node:lts AS development
 
-# 3. package.json 복사
-COPY package.json ./
+# Set working directory
+WORKDIR /app
 
-# 4. yarn.lock 파일이 있을 경우만 복사
-# COPY yarn.lock ./ || true
+# 
+COPY package.json /app/package.json
+COPY package-lock.json /app/package-lock.json
 
-# 5. 패키지 설치
-RUN yarn install --frozen-lockfile
+# Same as npm install
+RUN npm ci
 
-# 6. 전체 소스 코드 복사 후 빌드 실행
-COPY . .
-RUN yarn build
+COPY . /app
 
-# 7. Nginx를 사용하여 정적 파일 배포
+ENV CI=true
+ENV PORT=3000
+
+CMD [ "npm", "start" ]
+
+FROM development AS build
+
+RUN npm run build
+
+
+FROM development as dev-envs
+RUN <<EOF
+apt-get update
+apt-get install -y --no-install-recommends git
+EOF
+
+RUN <<EOF
+useradd -s /bin/bash -m vscode
+groupadd docker
+usermod -aG docker vscode
+EOF
+# install Docker tools (cli, buildx, compose)
+COPY --from=gloursdocker/docker / /
+CMD [ "npm", "start" ]
+
+# 2. For Nginx setup
 FROM nginx:alpine
 
-# 8. 빌드된 React 파일을 Nginx의 웹 루트로 복사
-COPY --from=build /usr/src/app/build /usr/share/nginx/html
+# Copy config nginx
+COPY --from=build /app/.nginx/nginx.conf /etc/nginx/conf.d/default.conf
 
-# 9. Nginx 실행
-CMD ["nginx", "-g", "daemon off;"]
+WORKDIR /usr/share/nginx/html
+
+# Remove default nginx static assets
+RUN rm -rf ./*
+
+# Copy static assets from builder stage
+COPY --from=build /app/build .
+
+# Containers run nginx with global directives and daemon off
+ENTRYPOINT ["nginx", "-g", "daemon off;"]
