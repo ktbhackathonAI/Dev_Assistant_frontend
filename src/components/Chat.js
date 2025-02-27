@@ -10,7 +10,10 @@ import FolderMessage from "../MessageTypes/FolderMessage";
 import UrlMessage from "../MessageTypes/UrlMessage";
 import Typewriter from "typewriter-effect";
 
+
 const Chat = () => {
+  const API_URL = process.env.REACT_APP_API_URL;
+
   const { darkMode } = useContext(ThemeContext);
   const theme = useTheme();
   const [input, setInput] = useState("");
@@ -39,12 +42,12 @@ const Chat = () => {
   useEffect(() => {
     const fetchMessages = async () => {
       try {
-        const response = await fetch(`http://localhost:8000/chat/rooms/${roomId}/messages`);
+        const response = await fetch(`${API_URL}/chat/rooms/${roomId}/messages`);
         if (response.ok) {
           const data = await response.json();
           // 서버에서 반환된 데이터를 변환
           const transformedMessages = data.map(transformServerResponse);
-          console.log(transformedMessages);
+          console.log(data);
           setMessages(transformedMessages);
         } else {
           console.error("대화방 메시지 목록을 가져오는 데 실패했습니다.");
@@ -65,7 +68,7 @@ const Chat = () => {
     setIsServerTyping(true);
 
     try {
-      const response = await fetch(`http://localhost:8000/chat/rooms/${roomId}/messages`, {
+      const response = await fetch(`${API_URL}/chat/rooms/${roomId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: input }),
