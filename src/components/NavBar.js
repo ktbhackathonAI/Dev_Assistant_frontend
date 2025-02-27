@@ -10,7 +10,7 @@ import RoomList from "./RoomList";  // RoomList 컴포넌트 가져오기
 const drawerWidth = 240;
 
 function ResponsiveDrawer({ open, toggleDrawer }) {
-  const API_URL = process.env.REACT_APP_API_URL;
+  const API_URL = "http://211.188.60.112:8000";
   const navigate = useNavigate();
   const { darkMode, toggleTheme } = useContext(ThemeContext);
   const theme = useTheme();
@@ -22,6 +22,7 @@ function ResponsiveDrawer({ open, toggleDrawer }) {
     const response = await fetch(`${API_URL}/chat/rooms`);
     if (response.ok) {
       const rooms = await response.json();
+      rooms.sort((a, b) => b.room_id - a.room_id); 
       console.log(rooms);
       setChats(rooms);  // 대화방 목록을 상태에 업데이트
     } else {
@@ -84,6 +85,7 @@ function ResponsiveDrawer({ open, toggleDrawer }) {
             borderRadius: 5,
             bgcolor: theme.palette.primary.main,
             color: theme.palette.primary.contrastText,
+            fontWeight: "600",
             ":hover": { bgcolor: theme.palette.primary.dark },
           }}
         >

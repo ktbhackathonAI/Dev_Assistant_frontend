@@ -4,15 +4,13 @@ import { Box, TextField, IconButton, List, ListItem, ListItemText, Paper } from 
 import { Send } from "@mui/icons-material";
 import { ThemeContext } from "../ThemeContext";
 import { useTheme } from "@mui/material/styles";
-import CodeMessage from "../MessageTypes/CodeMessage";
-import LinkMessage from "../MessageTypes/LinkMessage";
-import FolderMessage from "../MessageTypes/FolderMessage";
-import UrlMessage from "../MessageTypes/UrlMessage";
-import Typewriter from "typewriter-effect";
-
+import ReactMarkdown from "react-markdown";
+import rehypePrism from 'rehype-prism';
+import remarkGfm from 'remark-gfm';
+import 'prismjs/components/prism-python';  
 
 const Chat = () => {
-  const API_URL = process.env.REACT_APP_API_URL;
+  const API_URL = "http://211.188.60.112:8000";
 
   const { darkMode } = useContext(ThemeContext);
   const theme = useTheme();
@@ -22,21 +20,35 @@ const Chat = () => {
   const { roomId } = useParams();
   const [messages, setMessages] = useState([]);
 
-  // 서버 응답을 기대하는 형식으로 변환하는 함수
+  useEffect(() => {
+    const sampleMessages = [
+      { type: "text", role: "user", content: "안녕하세요!" },
+      { type: "markdown", role: "server", content: "# 제목 1\n## 제목 2\n**굵은 텍스트**\n*기울임*`코드`" },
+      { type: "markdown", role: "server", content: "## 또 다른 제목\n- 목록 1\n- 목록 2\n```python\ndef greet(name):\nprint(f'Hello, {name}!')\ngreet('World')" },
+      { type: "text", role: "system", content: "시스템 메시지" }
+    ];
+    setMessages(sampleMessages);
+  }, []);
+  
+
+  // 마크다운 체크 함수
+  const isMarkdown = (text) => {
+    const markdownPatterns = [
+      /^#{1,6}\s/, // 제목 (#, ##, ### 등)
+      /^\s*[-*+]\s/, // 목록 (-, *, +)
+      /\*\*.*\*\*/, // 굵게 (**text**)
+      /\*.*\*/, // 기울임 (*text*)
+      /`.*`/, // 코드 (`text`)
+      /^\s*```/, // 코드 블록 (```)
+    ];
+
+    return markdownPatterns.some((pattern) => pattern.test(text));
+  };
+
   const transformServerResponse = (serverData) => {
     const { content, sender } = serverData;
-    // content를 기반으로 type을 추정하거나, 이미 정의된 형식을 따름
-    if (content.startsWith("http")) {
-      return { type: "link", role: sender, content };
-    } else if (content.includes("→")) {
-      return { type: "url", role: sender, content };
-    } else if (content.includes("const") || content.includes("function")) {
-      return { type: "code", role: sender, content };
-    } else if (content.includes("├──")) {
-      return { type: "folder", role: sender, content };
-    } else {
-      return { type: "text", role: sender, content };
-    }
+
+    return { type: isMarkdown(content) ? "markdown" : "text", role: sender, content };
   };
 
   useEffect(() => {
@@ -45,10 +57,8 @@ const Chat = () => {
         const response = await fetch(`${API_URL}/chat/rooms/${roomId}/messages`);
         if (response.ok) {
           const data = await response.json();
-          // 서버에서 반환된 데이터를 변환
           const transformedMessages = data.map(transformServerResponse);
-          console.log(data);
-          setMessages(transformedMessages);
+          //setMessages(transformedMessages);
         } else {
           console.error("대화방 메시지 목록을 가져오는 데 실패했습니다.");
         }
@@ -194,24 +204,20 @@ const Chat = () => {
                       ? "#fff"
                       : "#000",
                   boxShadow:
-                    msg.role === "system" && msg.type !== "text"
+                    msg.type === "markdown"
                       ? "none"
                       : theme.shadows[1],
-                  width: msg.role === "system" && msg.type !== "text" ? "100%" : "auto",
+                  width: msg.role === "system" && msg.type === "markdown" ? "100%" : "auto",
                 }}
               >
-                {msg.type === "code" ? (
-                  <CodeMessage content={msg.content} />
-                ) : msg.type === "link" ? (
-                  <LinkMessage content={msg.content} />
-                ) : msg.type === "folder" ? (
-                  <FolderMessage content={msg.content} />
-                ) : msg.type === "url" ? (
-                  <UrlMessage content={msg.content} />
+                {msg.type === "markdown" ? (
+                   <ReactMarkdown 
+                    children={msg.content} 
+                    rehypePlugins={[rehypePrism]} 
+                    remarkPlugins={[remarkGfm]} 
+                  /> 
                 ) : (
-                  <ListItemText
-                      primary={msg.content}
-                    />
+                  <ListItemText primary={msg.content}/>
                 )}
               </Paper>
             </ListItem>

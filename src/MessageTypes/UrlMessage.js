@@ -2,7 +2,6 @@ import React from "react";
 import { Box, Typography } from "@mui/material";
 import { Paper } from "@mui/material";
 import ReactMarkdown from "react-markdown";
-import Typewriter from "typewriter-effect";
 
 const UrlMessage = ({ content }) => (
   <Box sx={{ mt: 3 }}>
