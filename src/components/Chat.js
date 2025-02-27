@@ -210,20 +210,7 @@ const Chat = () => {
                   <UrlMessage content={msg.content} />
                 ) : (
                   <ListItemText
-                      primary={
-                        msg.type === "text" ? (
-                          <Typewriter
-                            options={{
-                              strings: [msg.content],
-                              autoStart: true,
-                              delay: 20,
-                              cursor: "",
-                              loop: false,
-                              deleteSpeed: Infinity,
-                            }}
-                          />
-                        ) : msg.content
-                      }
+                      primary={msg.content}
                     />
                 )}
               </Paper>
