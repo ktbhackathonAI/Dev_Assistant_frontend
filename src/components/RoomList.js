@@ -4,12 +4,11 @@ import { useNavigate } from "react-router-dom";
 import { ThemeContext } from "../ThemeContext";
 
 
-const RoomList = ({ chats, setChats, setMessages }) => {
+const RoomList = ({ chats, setChats, setMessages, selectedChatId, setSelectedChatId }) => {
   const API_URL = "http://211.188.60.112:8000";
   const navigate = useNavigate();
   const { darkMode } = useContext(ThemeContext);
   const [expandedChatId, setExpandedChatId] = useState(null);
-  const [selectedChatId, setSelectedChatId] = useState(null); 
 
   // 대화방 클릭 시 메시지 불러오기
   const handleRoomClick = async (roomId) => {
@@ -42,6 +41,7 @@ const RoomList = ({ chats, setChats, setMessages }) => {
                     ? (darkMode ? "#424242" : "#E5F3E5") 
                     : "transparent",
                 }}
+                disableRipple
               >
                 <ListItemText 
                   primary={`채팅방 ${chat.room_id}`}
@@ -57,7 +57,7 @@ const RoomList = ({ chats, setChats, setMessages }) => {
                     e.stopPropagation(); // ListItemButton으로 이벤트 전파 방지
                     chat.repo_url && toggleRepoVisibility(chat.room_id); 
                   }}
-                  sx={{ ml: 2 }}
+                  sx={{ ml: 2 }} 
                 >
                   <Typography variant="body2" sx={{ fontSize: 16 }}>
                     {expandedChatId === chat.room_id ? "▼" : "▶"}

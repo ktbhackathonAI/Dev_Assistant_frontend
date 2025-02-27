@@ -16,6 +16,7 @@ function ResponsiveDrawer({ open, toggleDrawer }) {
   const theme = useTheme();
   const [messages, setMessages] = useState([]);  // 대화방 메시지 상태
   const [chats, setChats] = useState([]);  // 대화방 목록 상태
+  const [selectedChatId, setSelectedChatId] = useState(null);  // 선택된 채팅방 상태 추가
 
   // Define fetchRooms function here
   const fetchRooms = async () => {
@@ -50,8 +51,10 @@ function ResponsiveDrawer({ open, toggleDrawer }) {
       // 대화방 목록 갱신
       await fetchRooms();  // 대화방 목록 갱신
 
+      setSelectedChatId(data.room_id); //todtjd
+
       // 생성된 대화방으로 이동
-      navigate(`/rooms/${data.room_id}`);  // room_id를 사용하여 해당 대화방으로 이동
+      navigate(`/rooms/${data.room_id}`);  // 새로 생성된 채팅방을 선택된 상태로 업데이트
     } else {
       console.error("대화방 생성 실패");
     }
@@ -95,7 +98,13 @@ function ResponsiveDrawer({ open, toggleDrawer }) {
       <Divider />
 
       {/* 대화방 목록 */}
-      <RoomList chats={chats} setChats={setChats} setMessages={setMessages} />
+      <RoomList 
+        chats={chats} 
+        setChats={setChats} 
+        setMessages={setMessages} 
+        selectedChatId={selectedChatId} 
+        setSelectedChatId={setSelectedChatId} 
+      />
 
       {/* 다크모드 토글 버튼 */}
       <Box sx={{ p: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>

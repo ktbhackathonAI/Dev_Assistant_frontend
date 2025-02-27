@@ -7,6 +7,7 @@ import { useTheme } from "@mui/material/styles";
 import ReactMarkdown from "react-markdown";
 import rehypePrism from 'rehype-prism';
 import remarkGfm from 'remark-gfm';
+import 'prismjs/themes/prism.css';  
 import 'prismjs/components/prism-python';  
 
 const Chat = () => {
@@ -201,10 +202,10 @@ const Chat = () => {
               >
                 {msg.type === "markdown" ? (
                    <ReactMarkdown 
-                    children={msg.content} 
-                    rehypePlugins={[rehypePrism]} 
-                    remarkPlugins={[remarkGfm]} 
-                  /> 
+                   children={msg.content} 
+                   rehypePlugins={[rehypePrism]} 
+                   remarkPlugins={[remarkGfm]} 
+                 />
                 ) : (
                   <ListItemText primary={msg.content}/>
                 )}
