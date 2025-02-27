@@ -2,7 +2,7 @@ import React, { useContext, useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { Box, CssBaseline, Divider, Drawer, Toolbar, Typography, Button, IconButton, Tooltip } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { Add, Chat, Hexagon, Brightness7, Brightness4 } from "@mui/icons-material";  // Importing missing icons
+import { Chat, Hexagon, Brightness7, Brightness4 } from "@mui/icons-material";  // Importing missing icons
 import { ThemeContext } from "../ThemeContext";
 import { useTheme } from "@mui/material/styles";
 import RoomList from "./RoomList";  // RoomList 컴포넌트 가져오기
@@ -10,18 +10,16 @@ import RoomList from "./RoomList";  // RoomList 컴포넌트 가져오기
 const drawerWidth = 240;
 
 function ResponsiveDrawer({ open, toggleDrawer }) {
+  const API_URL = process.env.REACT_APP_API_URL;
   const navigate = useNavigate();
   const { darkMode, toggleTheme } = useContext(ThemeContext);
   const theme = useTheme();
 
   const [chats, setChats] = useState([]);  // 대화방 목록 상태
-  const [messages, setMessages] = useState([]);  // 대화방 메시지 상태
-
-  const isLoggedIn = !!localStorage.getItem("token");
 
   // Define fetchRooms function here
   const fetchRooms = async () => {
-    const response = await fetch('http://localhost:8000/chat/rooms');
+    const response = await fetch(`${API_URL}/chat/rooms`);
     if (response.ok) {
       const rooms = await response.json();
       console.log(rooms);
@@ -38,7 +36,7 @@ function ResponsiveDrawer({ open, toggleDrawer }) {
 
   const handleCreateRoom = async () => {
     const repoUrl = "https://github.com/user/test";  // 예시로 제공된 URL
-    const response = await fetch('http://localhost:8000/chat/rooms', {
+    const response = await fetch(`${API_URL}/chat/rooms`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ repo_url: repoUrl }),
@@ -95,7 +93,7 @@ function ResponsiveDrawer({ open, toggleDrawer }) {
       <Divider />
 
       {/* 대화방 목록 */}
-      <RoomList chats={chats} setChats={setChats} setMessages={setMessages} />
+      <RoomList chats={chats} setChats={setChats} />
 
       {/* 다크모드 토글 버튼 */}
       <Box sx={{ p: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
