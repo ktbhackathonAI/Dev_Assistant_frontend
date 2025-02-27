@@ -18,7 +18,7 @@ const lightTheme = createTheme({
     },
   },
   syntaxHighlighter: {
-    theme: oneLight, 
+    theme: oneDark, 
   },
 });
 
@@ -39,7 +39,7 @@ const darkTheme = createTheme({
     },
   },
   syntaxHighlighter: {
-    theme: oneDark, 
+    theme: oneLight, 
   },
 });
 

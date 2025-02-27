@@ -1,5 +1,5 @@
 import React, { useContext } from "react";
-import { Link, Box } from "@mui/material";
+import { Link, Box, Typography } from "@mui/material";
 import { ThemeContext } from "../ThemeContext";
 import ReactMarkdown from "react-markdown";
 import githubDark from "../assets/image/githubdark.svg"; 
@@ -9,7 +9,7 @@ const LinkMessage = ({ content }) => {
     const { darkMode } = useContext(ThemeContext);
 
     return(
-        <Box>
+        <Box sx={{ mt: 3 }}>
             <Box sx={{ display: "flex", alignItems: "center" }}>
             <Box
                 component="img"
@@ -17,7 +17,9 @@ const LinkMessage = ({ content }) => {
                 alt="GitHub Logo"
                 sx={{ width: 28, height: 28, mr: 1}}
             />
-            <ReactMarkdown>{`### 깃허브 주소`}</ReactMarkdown>
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                {"깃허브 주소"}
+            </Typography>
             </Box>
             <ReactMarkdown>{`---`}</ReactMarkdown>
             <ReactMarkdown
@@ -26,9 +28,10 @@ const LinkMessage = ({ content }) => {
                 <Link
                     {...props}
                     sx={{
-                    color: darkMode ? "#fff" : "#1976d2", 
-                    textDecoration: "none",
-                    ":hover": { textDecoration: "underline" }
+                        mt:2,
+                        color: darkMode ? "#fff" : "#1976d2", 
+                        textDecoration: "none",
+                        ":hover": { textDecoration: "underline" }
                     }}
                 />
                 ),

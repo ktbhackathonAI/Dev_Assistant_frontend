@@ -52,7 +52,13 @@ const RoomList = ({ chats, setChats, setMessages }) => {
             </ListItem>
 
             {expandedChatId === chat.room_id && chat.repo_url && (
-              <Box sx={{ p: [1, 1, 1, 3], bgcolor: darkMode ? "#1E1E1E" : "#f5f5f5" }}>
+              <Box sx={{ 
+                pt:1, 
+                pb:1, 
+                pl:3, 
+                pr:1,
+                bgcolor: darkMode ? "#1E1E1E" : "#f5f5f5" }
+              }>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                   <Typography variant="body2" color="textSecondary">
                     🔗
@@ -62,7 +68,7 @@ const RoomList = ({ chats, setChats, setMessages }) => {
                     target="_blank"
                     rel="noopener noreferrer"
                     sx={{
-                      color: darkMode ? "#fff" : "#1976d2", 
+                      color: darkMode ? "#1E90FF" : "#1976d2", 
                       textDecoration: "none", 
                       "&:hover": { textDecoration: "underline" }, 
                       overflow: "hidden",
