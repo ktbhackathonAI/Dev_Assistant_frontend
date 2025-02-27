@@ -14,7 +14,7 @@ function ResponsiveDrawer({ open, toggleDrawer }) {
   const navigate = useNavigate();
   const { darkMode, toggleTheme } = useContext(ThemeContext);
   const theme = useTheme();
-
+  const [messages, setMessages] = useState([]);  // 대화방 메시지 상태
   const [chats, setChats] = useState([]);  // 대화방 목록 상태
 
   // Define fetchRooms function here
@@ -93,7 +93,7 @@ function ResponsiveDrawer({ open, toggleDrawer }) {
       <Divider />
 
       {/* 대화방 목록 */}
-      <RoomList chats={chats} setChats={setChats} />
+      <RoomList chats={chats} setChats={setChats} setMessages={setMessages} />
 
       {/* 다크모드 토글 버튼 */}
       <Box sx={{ p: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
