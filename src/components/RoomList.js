@@ -5,11 +5,11 @@ import { ThemeContext } from "../ThemeContext";
 
 
 const RoomList = ({ chats, setChats, setMessages }) => {
-  const API_URL = "http://211.188.60.112:8000";
+  const API_URL = "http://211.188.60.112:8000";//"http://localhost:8000"
   const navigate = useNavigate();
   const { darkMode } = useContext(ThemeContext);
   const [expandedChatId, setExpandedChatId] = useState(null);
-  const [selectedChatId, setSelectedChatId] = useState(null); 
+  const [selectedChatId, setSelectedChatId] = useState(null);
 
   // 대화방 클릭 시 메시지 불러오기
   const handleRoomClick = async (roomId) => {
@@ -35,15 +35,15 @@ const RoomList = ({ chats, setChats, setMessages }) => {
         {chats.map((chat, index) => (
           <React.Fragment key={chat.room_id || index}>
             <ListItem disablePadding>
-              <ListItemButton 
+              <ListItemButton
                 onClick={() => handleRoomClick(chat.room_id)}
                 sx={{
-                  backgroundColor: selectedChatId === chat.room_id 
-                    ? (darkMode ? "#424242" : "#E5F3E5") 
+                  backgroundColor: selectedChatId === chat.room_id
+                    ? (darkMode ? "#424242" : "#E5F3E5")
                     : "transparent",
                 }}
               >
-                <ListItemText 
+                <ListItemText
                   primary={`채팅방 ${chat.room_id}`}
                   sx = {{
                     pl:1,
@@ -55,7 +55,7 @@ const RoomList = ({ chats, setChats, setMessages }) => {
                 <IconButton
                   onClick={(e) => {
                     e.stopPropagation(); // ListItemButton으로 이벤트 전파 방지
-                    chat.repo_url && toggleRepoVisibility(chat.room_id); 
+                    chat.repo_url && toggleRepoVisibility(chat.room_id);
                   }}
                   sx={{ ml: 2 }}
                 >
@@ -67,10 +67,10 @@ const RoomList = ({ chats, setChats, setMessages }) => {
             </ListItem>
 
             {expandedChatId === chat.room_id && chat.repo_url && (
-              <Box sx={{ 
-                pt:1, 
-                pb:1, 
-                pl:3, 
+              <Box sx={{
+                pt:1,
+                pb:1,
+                pl:3,
                 pr:1,
                 bgcolor: darkMode ? "#1E1E1E" : "#f5f5f5" }
               }>
@@ -83,9 +83,9 @@ const RoomList = ({ chats, setChats, setMessages }) => {
                     target="_blank"
                     rel="noopener noreferrer"
                     sx={{
-                      color: darkMode ? "#1E90FF" : "#1976d2", 
-                      textDecoration: "none", 
-                      "&:hover": { textDecoration: "underline" }, 
+                      color: darkMode ? "#1E90FF" : "#1976d2",
+                      textDecoration: "none",
+                      "&:hover": { textDecoration: "underline" },
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                     }}
