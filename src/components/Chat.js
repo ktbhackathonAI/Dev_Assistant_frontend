@@ -1,4 +1,5 @@
 import React, { useState, useContext, useRef, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import { Box, TextField, IconButton, List, ListItem, ListItemText, Paper } from "@mui/material";
 import { Send } from "@mui/icons-material";
 import { ThemeContext } from "../ThemeContext";
@@ -12,117 +13,212 @@ import Typewriter from "typewriter-effect";
 const Chat = () => {
   const { darkMode } = useContext(ThemeContext);
   const theme = useTheme();
-  const [requests, setRequests] = useState([]); 
-  const [input, setInput] = useState(""); 
-  const [step, setStep] = useState(0);
-  const [isLoading, setIsLoading] = useState(false); 
+  const [input, setInput] = useState("");
+  const [isServerTyping, setIsServerTyping] = useState(false);
   const messagesEndRef = useRef(null);
+  const { roomId } = useParams();
+  const [messages, setMessages] = useState([]);
 
-  const handleSendRequest = () => {
+  // 서버 응답을 기대하는 형식으로 변환하는 함수
+  const transformServerResponse = (serverData) => {
+    const { content, sender } = serverData;
+    // content를 기반으로 type을 추정하거나, 이미 정의된 형식을 따름
+    if (content.startsWith("http")) {
+      return { type: "link", role: "server", content };
+    } else if (content.includes("→")) {
+      return { type: "url", role: "server", content };
+    } else if (content.includes("const") || content.includes("function")) {
+      return { type: "code", role: "server", content };
+    } else if (content.includes("├──")) {
+      return { type: "folder", role: "server", content };
+    } else {
+      return { type: "text", role: "server", content };
+    }
+  };
+
+  useEffect(() => {
+    const fetchMessages = async () => {
+      try {
+        const response = await fetch(`http://localhost:8000/chat/rooms/${roomId}/messages`);
+        if (response.ok) {
+          const data = await response.json();
+          // 서버에서 반환된 데이터를 변환
+          const transformedMessages = data.map(transformServerResponse);
+          console.log(transformedMessages);
+          setMessages(transformedMessages);
+        } else {
+          console.error("대화방 메시지 목록을 가져오는 데 실패했습니다.");
+        }
+      } catch (error) {
+        console.error("메시지 가져오기 오류:", error);
+      }
+    };
+
+    fetchMessages();
+  }, [roomId]);
+
+  const handleSendRequest = async () => {
     if (input.trim() === "") return;
 
-    setRequests([...requests, { type: "text", role: "user", content: input }]);
+    const newUserMessage = { type: "text", role: "user", content: input };
+    setMessages((prev) => [...prev, newUserMessage]);
+    setIsServerTyping(true);
 
-    setIsLoading(true); 
+    try {
+      const response = await fetch(`http://localhost:8000/chat/rooms/${roomId}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: input }),
+      });
 
-    if (step === 0) {
-      setTimeout(() => {
-        setRequests((prev) => [...prev, { type: "text", role: "server", content: "프로젝트 이름을 입력하세요." }]);
-        setIsLoading(false);
-      }, 500);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-      setStep(1);
-    } else if (step === 1) {
-      setTimeout(() => {
-        setRequests((prev) => [...prev, { type: "text", role: "server", content: "📦 사용할 기술 스택을 입력하세요. (예: Node.js, Express, MongoDB)" }]);
-        setIsLoading(false);
-      }, 500);
-      setStep(2);
-    } else if (step === 2) {
-      setTimeout(() => {
-        setRequests((prev) => [...prev, { type: "text", role: "server", content: "🛠 프로젝트를 생성하는 중..." }]);
-        setIsLoading(false);
-      }, 500);
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let newServerMessages = [];
 
-      setTimeout(() => {
-        setRequests((prev) => [...prev, ...mockServerData]);
-        setIsLoading(false); 
-      }, 2000);
-      setStep(0);
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value);
+        const lines = chunk.split("\n").filter((line) => line.trim());
+        for (const line of lines) {
+          const message = JSON.parse(line); // {content, sender, status}
+          const transformedMessage = transformServerResponse(message);
+          console.log(transformedMessage);
+          newServerMessages.push(transformedMessage);
+        }
+      }
+      setMessages((prev) => [...prev, ...newServerMessages]);
+    } catch (error) {
+      console.error(error);
+      setMessages((prev) => [
+        ...prev,
+        { type: "text", role: "system", content: "❌ 서버 오류가 발생했습니다." },
+      ]);
     }
-
+    setIsServerTyping(false);
     setInput("");
   };
 
-  // ✅ 서버에서 오는 데이터 테스트용
-  const mockServerData = [
-    { type: "text", role: "server", content: "프로젝트가 생성되었습니다!" },
-    { type: "folder", role: "server", content: "├── src/\n│   ├── app.js\n│   ├── routes/\n│   │   ├── api.js\n├── package.json" },
-    { type: "url", role: "server", content: "GET /api/project/status → 서버 상태 확인\nPOST /api/project/data → 데이터 저장" },
-    { type: "code", role: "server", content: "const express = require(\"express\");\nconst app = express();\n\napp.get(\"/\", (req, res) => {\n  res.send(\"Hello, World!\");\n});\n\napp.listen(3000, () => {\n  console.log(\"Server running on port 3000\");\n});" },
-    { type: "link", role: "server", content: "https://github.com/user/project" }
-  ];
-
-  // ✅ 자동 스크롤
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [requests]);
+  }, [messages]);
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", height: "calc(100vh - 40px)", bgcolor: theme.palette.background.default, color: theme.palette.text.primary, p: 2, mt: 2, mb: 2 }}>
-      {/* ✅ 채팅 내역 */}
-      <Paper sx={{ flexGrow: 1, overflowY: "auto", p: 2, borderRadius: 2, bgcolor: darkMode ? "#1E1E1E" : "#f5f5f5", "&::-webkit-scrollbar": { display: "none" } }}>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        height: "calc(100vh - 40px)",
+        bgcolor: theme.palette.background.default,
+        color: theme.palette.text.primary,
+        p: 2,
+        mt: 2,
+        mb: 2,
+      }}
+    >
+      <Paper
+        sx={{
+          flexGrow: 1,
+          overflowY: "auto",
+          p: 2,
+          borderRadius: 2,
+          bgcolor: darkMode ? "#1E1E1E" : "#f5f5f5",
+          "&::-webkit-scrollbar": { display: "none" },
+        }}
+      >
         <List>
-          {requests.map((msg, index) => (
-            <ListItem key={index} sx={{ justifyContent: msg.role === "user" ? "flex-end" : "flex-start", textAlign: msg.role === "user" ? "right" : "left", mb: 1 }}>
-              <Paper sx={{
-                p: 1.5, 
-                borderRadius: 2, 
-                bgcolor: msg.role === "user" ? theme.palette.primary.main : 
-                          (msg.type === "text" ? "#ddd" : darkMode ? "#1E1E1E" : "#f5f5f5"), 
-                color: msg.role === "user" ? "#fff" : 
-                        (msg.type === "text" ? "#000" : darkMode ? "#fff" : "#000"),
-                boxShadow: msg.role === "server" && msg.type !== "text" ? "none" : theme.shadows[1],
-                minWidth: msg.role === "server" && msg.type !== "text" ? "50%" : "auto",
-              }}>
-                {msg.type === "code" ? <CodeMessage content={msg.content} /> :
-                 msg.type === "link" ? <LinkMessage content={msg.content} /> :
-                 msg.type === "folder" ? <FolderMessage content={msg.content} /> :
-                 msg.type === "url" ? <UrlMessage content={msg.content} /> :
-                 <ListItemText
-                  primary={
-                    msg.type === "text" ? (
-                      <Typewriter
-                        options={{
-                          strings: [msg.content], 
-                          autoStart: true,
-                          delay: 50, 
-                          cursor: "", 
-                        }}
-                      />
-                    ) : msg.content
-                  }/>}
+          
+          {messages.map((msg, index) => (
+            <ListItem
+              key={index}
+              sx={{
+                justifyContent: msg.role === "user" ? "flex-end" : "flex-start",
+                textAlign: msg.role === "user" ? "right" : "left",
+                mb: 1,
+              }}
+            >
+              <Paper
+                sx={{
+                  p: 1.5,
+                  borderRadius: 2,
+                  bgcolor:
+                    msg.role === "user"
+                      ? theme.palette.primary.main
+                      : msg.type === "text"
+                      ? "#ddd"
+                      : darkMode
+                      ? "#1E1E1E"
+                      : "#f5f5f5",
+                  color:
+                    msg.role === "user"
+                      ? "#fff"
+                      : msg.type === "text"
+                      ? "#000"
+                      : darkMode
+                      ? "#fff"
+                      : "#000",
+                  boxShadow:
+                    msg.role === "server" && msg.type !== "text"
+                      ? "none"
+                      : theme.shadows[1],
+                  minWidth: msg.role === "server" && msg.type !== "text" ? "50%" : "auto",
+                }}
+              >
+                {msg.type === "code" ? (
+                  <CodeMessage content={msg.content} />
+                ) : msg.type === "link" ? (
+                  <LinkMessage content={msg.content} />
+                ) : msg.type === "folder" ? (
+                  <FolderMessage content={msg.content} />
+                ) : msg.type === "url" ? (
+                  <UrlMessage content={msg.content} />
+                ) : (
+                  <ListItemText primary={msg.content} />
+                )}
               </Paper>
             </ListItem>
           ))}
           <div ref={messagesEndRef} />
         </List>
       </Paper>
-      {/* ✅ 입력 필드 */}
-      <Box sx={{ display: "flex", mt: 2 }}>
-        <TextField 
-          fullWidth 
-          variant="outlined" 
-          placeholder="메시지를 입력하세요..." 
-          value={input} 
+
+      <Box
+        sx={{
+          display: "flex",
+          mt: 2,
+          p: 1,
+          borderRadius: 2,
+          bgcolor: theme.palette.background.paper,
+        }}
+      >
+        <TextField
+          fullWidth
+          variant="outlined"
+          placeholder="입력하세요..."
+          value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyPress={(e) => e.key === "Enter" && handleSendRequest()}
-          disabled={isLoading}  
+          onKeyPress={(e) => e.key === "Enter" && !isServerTyping && handleSendRequest()}
+          sx={{
+            bgcolor: darkMode ? "#2C2C2C" : "#fff",
+            color: theme.palette.text.primary,
+            borderRadius: 2,
+            "& .MuiOutlinedInput-root": {
+              "& fieldset": { borderColor: darkMode ? "#555" : "#ccc" },
+              "&:hover fieldset": { borderColor: darkMode ? "#888" : "#999" },
+              "&.Mui-focused fieldset": { borderColor: theme.palette.primary.main },
+            },
+          }}
+          disabled={isServerTyping}
         />
-        <IconButton 
-          color="primary" 
-          onClick={handleSendRequest} 
-          disabled={isLoading || input.trim() === ""} 
+        <IconButton
+          color="primary"
+          onClick={handleSendRequest}
+          sx={{ ml: 1 }}
+          disabled={!input.trim() || isServerTyping}
         >
           <Send />
         </IconButton>
@@ -132,8 +228,3 @@ const Chat = () => {
 };
 
 export default Chat;
-
-
-
-
-
