@@ -64,19 +64,20 @@ const Chat = () => {
     if (input.trim() === "") return;
 
     const newUserMessage = { type: "text", role: "user", content: input };
+    console.log("User message sent:", newUserMessage);
     setMessages((prev) => [...prev, newUserMessage]);
     setIsServerTyping(true);
 
     try {
+      console.log("Sending request to:", `${API_URL}/chat/rooms/${roomId}/messages`);
       const response = await fetch(`${API_URL}/chat/rooms/${roomId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: input }),
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      console.log("Response received, status:", response.status);
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
@@ -84,22 +85,50 @@ const Chat = () => {
 
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
+        if (done) {
+          console.log("Streaming complete, total messages:", newServerMessages);
+          break;
+        }
+
         const chunk = decoder.decode(value);
+        console.log("Received chunk:", chunk);
+
         const lines = chunk.split("\n").filter((line) => line.trim());
+        console.log("Split into lines:", lines);
+
         for (const line of lines) {
-          const message = JSON.parse(line); // {content, sender, status}
-          const transformedMessage = transformServerResponse(message);
-          console.log(transformedMessage);
+          let messageData;
+          if (line.startsWith("data: ")) {
+            const content = line.substring(6); // "data: " 제거
+            console.log("SSE data detected, raw content:", content);
+            try {
+              messageData = JSON.parse(content);
+              console.log("Parsed JSON:", messageData);
+            } catch {
+              messageData = { content, sender: "server" };
+              console.log("Non-JSON content, treated as text:", messageData);
+            }
+          } else {
+            try {
+              messageData = JSON.parse(line);
+              console.log("Parsed JSON line:", messageData);
+            } catch (e) {
+              console.error("Invalid JSON:", line, e);
+              messageData = { content: line, sender: "server" };
+              console.log("Fallback to text:", messageData);
+            }
+          }
+          const transformedMessage = transformServerResponse(messageData);
+          console.log("Transformed message:", transformedMessage);
           newServerMessages.push(transformedMessage);
         }
       }
       setMessages((prev) => [...prev, ...newServerMessages]);
     } catch (error) {
-      console.error(error);
+      console.error("전송 오류:", error);
       setMessages((prev) => [
         ...prev,
-        { type: "text", role: "system", content: "❌ 서버 오류가 발생했습니다." },
+        { type: "text", role: "system", content: "❌ 서버 오류: " + error.message },
       ]);
     }
     setIsServerTyping(false);
@@ -134,7 +163,7 @@ const Chat = () => {
         }}
       >
         <List>
-          
+
           {messages.map((msg, index) => (
             <ListItem
               key={index}
@@ -189,8 +218,8 @@ const Chat = () => {
                               autoStart: true,
                               delay: 20,
                               cursor: "",
-                              loop: false, 
-                              deleteSpeed: Infinity, 
+                              loop: false,
+                              deleteSpeed: Infinity,
                             }}
                           />
                         ) : msg.content
