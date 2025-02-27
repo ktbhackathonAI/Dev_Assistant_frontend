@@ -23,21 +23,11 @@ function ResponsiveDrawer({ open, toggleDrawer }) {
     if (response.ok) {
       const rooms = await response.json();
       console.log(rooms);
-      //setChats(rooms);  // 대화방 목록을 상태에 업데이트
+      setChats(rooms);  // 대화방 목록을 상태에 업데이트
     } else {
       console.error("대화방 목록을 가져오는 데 실패했습니다.");
     }
   };
-
-  useEffect(() => {
-    const testData = [
-      { room_id: 1, repo_url: "http://google.com", name: "Room 1", created_at: "2020-01-01" },
-      { room_id: 2, repo_url: "http://github.com", name: "Room 2", created_at: "2021-02-02" },
-      { room_id: 3, repo_url: "http://eeeeeeeeexample.com", name: "Room 3", created_at: "2022-03-03" },
-    ];
-    
-    setChats(testData);  // setChats로 임의 데이터 설정
-  }, []);
 
   useEffect(() => {
     // 대화방 목록을 초기 로딩
