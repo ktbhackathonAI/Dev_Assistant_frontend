@@ -7,11 +7,10 @@ import { useTheme } from "@mui/material/styles";
 import ReactMarkdown from "react-markdown";
 import rehypePrism from 'rehype-prism';
 import remarkGfm from 'remark-gfm';
-import 'prismjs/components/prism-python';  
+import 'prismjs/components/prism-python';
 
 const Chat = () => {
-  const API_URL = "http://211.188.60.112:8000";
-
+  const API_URL = "http://211.188.60.112:8000";//"http://localhost:8000"
   const { darkMode } = useContext(ThemeContext);
   const theme = useTheme();
   const [input, setInput] = useState("");
@@ -20,23 +19,20 @@ const Chat = () => {
   const { roomId } = useParams();
   const [messages, setMessages] = useState([]);
 
-  // 마크다운 체크 함수
   const isMarkdown = (text) => {
     const markdownPatterns = [
-      /^#{1,6}\s/, // 제목 (#, ##, ### 등)
-      /^\s*[-*+]\s/, // 목록 (-, *, +)
-      /\*\*.*\*\*/, // 굵게 (**text**)
-      /\*.*\*/, // 기울임 (*text*)
-      /`.*`/, // 코드 (`text`)
-      /^\s*```/, // 코드 블록 (```)
+      /^#{1,6}\s/,
+      /^\s*[-*+]\s/,
+      /\*\*.*\*\*/,
+      /\*.*\*/,
+      /`.*`/,
+      /^\s*```/,
     ];
-
     return markdownPatterns.some((pattern) => pattern.test(text));
   };
 
   const transformServerResponse = (serverData) => {
     const { content, sender } = serverData;
-
     return { type: isMarkdown(content) ? "markdown" : "text", role: sender, content };
   };
 
@@ -48,14 +44,14 @@ const Chat = () => {
           const data = await response.json();
           const transformedMessages = data.map(transformServerResponse);
           setMessages(transformedMessages);
-        } else {
-          console.error("대화방 메시지 목록을 가져오는 데 실패했습니다.");
         }
       } catch (error) {
-        console.error("메시지 가져오기 오류:", error);
+        setMessages((prev) => [
+          ...prev,
+          { type: "text", role: "system", content: "❌ 메시지 가져오기 오류" },
+        ]);
       }
     };
-
     fetchMessages();
   }, [roomId]);
 
@@ -63,12 +59,10 @@ const Chat = () => {
     if (input.trim() === "") return;
 
     const newUserMessage = { type: "text", role: "user", content: input };
-    console.log("User message sent:", newUserMessage);
     setMessages((prev) => [...prev, newUserMessage]);
     setIsServerTyping(true);
 
     try {
-      console.log("Sending request to:", `${API_URL}/chat/rooms/${roomId}/messages`);
       const response = await fetch(`${API_URL}/chat/rooms/${roomId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -76,7 +70,6 @@ const Chat = () => {
       });
 
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      console.log("Response received, status:", response.status);
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
@@ -84,47 +77,34 @@ const Chat = () => {
 
       while (true) {
         const { done, value } = await reader.read();
-        if (done) {
-          console.log("Streaming complete, total messages:", newServerMessages);
-          break;
-        }
-
+        if (done) break;
         const chunk = decoder.decode(value);
-        console.log("Received chunk:", chunk);
-
+        setMessages((prev) => [...prev, { type: "text", role: "system", content: chunk.message }]);
+        setIsServerTyping(true);
         const lines = chunk.split("\n").filter((line) => line.trim());
-        console.log("Split into lines:", lines);
 
         for (const line of lines) {
           let messageData;
           if (line.startsWith("data: ")) {
-            const content = line.substring(6); // "data: " 제거
-            console.log("SSE data detected, raw content:", content);
+            const content = line.substring(6);
             try {
               messageData = JSON.parse(content);
-              console.log("Parsed JSON:", messageData);
             } catch {
               messageData = { content, sender: "server" };
-              console.log("Non-JSON content, treated as text:", messageData);
             }
           } else {
             try {
               messageData = JSON.parse(line);
-              console.log("Parsed JSON line:", messageData);
-            } catch (e) {
-              console.error("Invalid JSON:", line, e);
+            } catch {
               messageData = { content: line, sender: "server" };
-              console.log("Fallback to text:", messageData);
             }
           }
           const transformedMessage = transformServerResponse(messageData);
-          console.log("Transformed message:", transformedMessage);
           newServerMessages.push(transformedMessage);
         }
       }
       setMessages((prev) => [...prev, ...newServerMessages]);
     } catch (error) {
-      console.error("전송 오류:", error);
       setMessages((prev) => [
         ...prev,
         { type: "text", role: "system", content: "❌ 서버 오류: " + error.message },
@@ -162,7 +142,6 @@ const Chat = () => {
         }}
       >
         <List>
-
           {messages.map((msg, index) => (
             <ListItem
               key={index}
@@ -200,13 +179,13 @@ const Chat = () => {
                 }}
               >
                 {msg.type === "markdown" ? (
-                   <ReactMarkdown 
-                    children={msg.content} 
-                    rehypePlugins={[rehypePrism]} 
-                    remarkPlugins={[remarkGfm]} 
-                  /> 
+                  <ReactMarkdown
+                    children={msg.content}
+                    rehypePlugins={[rehypePrism]}
+                    remarkPlugins={[remarkGfm]}
+                  />
                 ) : (
-                  <ListItemText primary={msg.content}/>
+                  <ListItemText primary={msg.content} />
                 )}
               </Paper>
             </ListItem>
