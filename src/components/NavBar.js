@@ -24,6 +24,7 @@ function ResponsiveDrawer({ open, toggleDrawer }) {
     const response = await fetch('http://localhost:8000/chat/rooms');
     if (response.ok) {
       const rooms = await response.json();
+      console.log(rooms);
       setChats(rooms);  // 대화방 목록을 상태에 업데이트
     } else {
       console.error("대화방 목록을 가져오는 데 실패했습니다.");

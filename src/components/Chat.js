@@ -143,7 +143,7 @@ const Chat = () => {
             >
               <Paper
                 sx={{
-                  p: 1.5,
+                  p: [1, 1.5, 1, 1.5],
                   borderRadius: 2,
                   bgcolor:
                     msg.role === "user"
@@ -177,7 +177,22 @@ const Chat = () => {
                 ) : msg.type === "url" ? (
                   <UrlMessage content={msg.content} />
                 ) : (
-                  <ListItemText primary={msg.content} />
+                  <ListItemText
+                      primary={
+                        msg.type === "text" ? (
+                          <Typewriter
+                            options={{
+                              strings: [msg.content],
+                              autoStart: true,
+                              delay: 20,
+                              cursor: "",
+                              loop: false, 
+                              deleteSpeed: Infinity, 
+                            }}
+                          />
+                        ) : msg.content
+                      }
+                    />
                 )}
               </Paper>
             </ListItem>
