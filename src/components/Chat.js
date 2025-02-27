@@ -20,17 +20,6 @@ const Chat = () => {
   const { roomId } = useParams();
   const [messages, setMessages] = useState([]);
 
-  useEffect(() => {
-    const sampleMessages = [
-      { type: "text", role: "user", content: "안녕하세요!" },
-      { type: "markdown", role: "server", content: "# 제목 1\n## 제목 2\n**굵은 텍스트**\n*기울임*`코드`" },
-      { type: "markdown", role: "server", content: "## 또 다른 제목\n- 목록 1\n- 목록 2\n```python\ndef greet(name):\nprint(f'Hello, {name}!')\ngreet('World')" },
-      { type: "text", role: "system", content: "시스템 메시지" }
-    ];
-    setMessages(sampleMessages);
-  }, []);
-  
-
   // 마크다운 체크 함수
   const isMarkdown = (text) => {
     const markdownPatterns = [
@@ -58,7 +47,7 @@ const Chat = () => {
         if (response.ok) {
           const data = await response.json();
           const transformedMessages = data.map(transformServerResponse);
-          //setMessages(transformedMessages);
+          setMessages(transformedMessages);
         } else {
           console.error("대화방 메시지 목록을 가져오는 데 실패했습니다.");
         }
