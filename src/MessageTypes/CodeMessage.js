@@ -4,6 +4,7 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { ThemeContext } from "../ThemeContext";
 import { oneDark, oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
 import ReactMarkdown from "react-markdown";
+import Code from "../assets/image/code.png"
 
 const CodeMessage = ({ content }) => {
   const { darkMode } = useContext(ThemeContext);

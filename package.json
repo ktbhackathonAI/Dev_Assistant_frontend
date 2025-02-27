@@ -61,6 +61,7 @@
     "styled-components": "^6.1.15",
     "tailwindcss": "^3.0.2",
     "terser-webpack-plugin": "^5.2.5",
+    "typewriter-effect": "^2.21.0",
     "web-vitals": "^2.1.4",
     "webpack": "^5.64.4",
     "webpack-dev-server": "^4.6.0",

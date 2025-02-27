@@ -7,7 +7,7 @@ const UrlMessage = ({ content }) => (
   <Box>
     <ReactMarkdown>{`### 🚀 기본 API 엔드포인트`}</ReactMarkdown>
     <ReactMarkdown>{`---`}</ReactMarkdown>
-    <Typography component="pre" sx={{ fontFamily: "monospace" }}>{content}</Typography>
+    <Typography component="pre">{content}</Typography>
   </Box>
 );
 
