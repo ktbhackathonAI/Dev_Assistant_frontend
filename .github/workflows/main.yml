@@ -16,8 +16,8 @@ jobs:
 
       - name: Create .env File
         run: |
-          echo "REACT_APP_API_URL=${{ secrets.ENV_REACT_APP_API_URL }}" >> .env
-          echo "REACT_APP_ENV=${{ secrets.ENV_REACT_APP_ENV }}" >> .env
+          echo "REACT_APP_API_URL=${{ secrets.REACT_APP_API_URL }}" >> .env
+          echo "REACT_APP_ENV=${{ secrets.REACT_APP_ENV }}" >> .env
 
       - name: Configure Docker Daemon (Allow HTTP Registry)
         run: |
