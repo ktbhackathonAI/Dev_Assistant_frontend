@@ -22,7 +22,6 @@ const RoomList = ({ chats, setChats, setMessages }) => {
 
   // 대화방의 repo URL 토글 기능
   const toggleRepoVisibility = (chatId, event) => {
-    event.stopPropagation(); // ListItemButton의 클릭 이벤트 전파 방지
     setExpandedChatId(expandedChatId === chatId ? null : chatId); // 토글 기능
   };
 
@@ -36,7 +35,10 @@ const RoomList = ({ chats, setChats, setMessages }) => {
                 {/* <pre>{JSON.stringify(chat, null, 2)}</pre> */}
                 <ListItemText primary={`chat.id${chat.room_id}`} />
                 <IconButton
-                  onClick={(e) => chat.repo_url && toggleRepoVisibility(chat.room_id, e)} // repo_url이 null이면 동작 안 함
+                  onClick={(e) => {
+                    e.stopPropagation(); // ✅ ListItemButton으로 이벤트 전파 방지
+                    chat.repo_url && toggleRepoVisibility(chat.room_id, e); 
+                  }}
                   sx={{ ml: 2 }}
                 >
                   <Typography variant="body2" sx={{ fontSize: 16 }}>

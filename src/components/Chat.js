@@ -24,15 +24,15 @@ const Chat = () => {
     const { content, sender } = serverData;
     // content를 기반으로 type을 추정하거나, 이미 정의된 형식을 따름
     if (content.startsWith("http")) {
-      return { type: "link", role: "server", content };
+      return { type: "link", role: sender, content };
     } else if (content.includes("→")) {
-      return { type: "url", role: "server", content };
+      return { type: "url", role: sender, content };
     } else if (content.includes("const") || content.includes("function")) {
-      return { type: "code", role: "server", content };
+      return { type: "code", role: sender, content };
     } else if (content.includes("├──")) {
-      return { type: "folder", role: "server", content };
+      return { type: "folder", role: sender, content };
     } else {
-      return { type: "text", role: "server", content };
+      return { type: "text", role: sender, content };
     }
   };
 
@@ -44,8 +44,15 @@ const Chat = () => {
           const data = await response.json();
           // 서버에서 반환된 데이터를 변환
           const transformedMessages = data.map(transformServerResponse);
-          console.log(transformedMessages);
-          setMessages(transformedMessages);
+          console.log(data);
+          setMessages((prev) => [
+            ...prev,
+            { 
+              type: "link", 
+              role: "system", 
+              content: "const FolderList = ({ data, depth = 0 }) => (<List sx={{ pl: depth * 2 }}>)}"
+            }
+          ]);
         } else {
           console.error("대화방 메시지 목록을 가져오는 데 실패했습니다.");
         }
@@ -143,7 +150,7 @@ const Chat = () => {
             >
               <Paper
                 sx={{
-                  p: [1, 1.5, 1, 1.5],
+                  pt: 1, pr: 2, pb: 1, pl: 2,
                   borderRadius: 2,
                   bgcolor:
                     msg.role === "user"
@@ -162,10 +169,10 @@ const Chat = () => {
                       ? "#fff"
                       : "#000",
                   boxShadow:
-                    msg.role === "server" && msg.type !== "text"
+                    msg.role === "system" && msg.type !== "text"
                       ? "none"
                       : theme.shadows[1],
-                  minWidth: msg.role === "server" && msg.type !== "text" ? "50%" : "auto",
+                  width: msg.role === "system" && msg.type !== "text" ? "100%" : "auto",
                 }}
               >
                 {msg.type === "code" ? (
