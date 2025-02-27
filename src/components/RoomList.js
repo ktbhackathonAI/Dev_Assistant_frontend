@@ -1,14 +1,16 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { List, ListItem, ListItemButton, ListItemText, IconButton, Box, Typography } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
+
 const RoomList = ({ chats, setChats, setMessages }) => {
+  const API_URL = process.env.REACT_APP_API_URL;
   const navigate = useNavigate();
   const [expandedChatId, setExpandedChatId] = useState(null);
 
   // 대화방 클릭 시 메시지 불러오기
   const handleRoomClick = async (roomId) => {
-    const response = await fetch(`http://localhost:8000/chat/rooms/${roomId}/messages`);
+    const response = await fetch(`${API_URL}/chat/rooms/${roomId}/messages`);
     if (response.ok) {
       const messages = await response.json();
       setMessages(messages);  // 대화방 메시지 상태 업데이트
