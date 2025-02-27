@@ -10,7 +10,7 @@ import RoomList from "./RoomList";  // RoomList 컴포넌트 가져오기
 const drawerWidth = 240;
 
 function ResponsiveDrawer({ open, toggleDrawer }) {
-  const API_URL = "http://211.188.60.112:8000";
+  const API_URL = "http://211.188.60.112:8000";//"http://localhost:8000"
   const navigate = useNavigate();
   const { darkMode, toggleTheme } = useContext(ThemeContext);
   const theme = useTheme();
@@ -23,8 +23,8 @@ function ResponsiveDrawer({ open, toggleDrawer }) {
     const response = await fetch(`${API_URL}/chat/rooms`);
     if (response.ok) {
       const rooms = await response.json();
-      rooms.sort((a, b) => b.room_id - a.room_id); 
-      console.log(rooms);
+      rooms.sort((a, b) => b.room_id - a.room_id);
+      // console.log(rooms);
       setChats(rooms);  // 대화방 목록을 상태에 업데이트
     } else {
       console.error("대화방 목록을 가져오는 데 실패했습니다.");
@@ -46,7 +46,7 @@ function ResponsiveDrawer({ open, toggleDrawer }) {
 
     if (response.ok) {
       const data = await response.json();
-      console.log("대화방 생성 성공:", data);
+      // console.log("대화방 생성 성공:", data);
 
       // 대화방 목록 갱신
       await fetchRooms();  // 대화방 목록 갱신

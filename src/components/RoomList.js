@@ -5,7 +5,7 @@ import { ThemeContext } from "../ThemeContext";
 
 
 const RoomList = ({ chats, setChats, setMessages, selectedChatId, setSelectedChatId }) => {
-  const API_URL = "http://211.188.60.112:8000";
+  const API_URL = "http://211.188.60.112:8000";//"http://localhost:8000"
   const navigate = useNavigate();
   const { darkMode } = useContext(ThemeContext);
   const [expandedChatId, setExpandedChatId] = useState(null);
@@ -34,16 +34,16 @@ const RoomList = ({ chats, setChats, setMessages, selectedChatId, setSelectedCha
         {chats.map((chat, index) => (
           <React.Fragment key={chat.room_id || index}>
             <ListItem disablePadding>
-              <ListItemButton 
+              <ListItemButton
                 onClick={() => handleRoomClick(chat.room_id)}
                 sx={{
-                  backgroundColor: selectedChatId === chat.room_id 
-                    ? (darkMode ? "#424242" : "#E5F3E5") 
+                  backgroundColor: selectedChatId === chat.room_id
+                    ? (darkMode ? "#424242" : "#E5F3E5")
                     : "transparent",
                 }}
                 disableRipple
               >
-                <ListItemText 
+                <ListItemText
                   primary={`채팅방 ${chat.room_id}`}
                   sx = {{
                     pl:1,
@@ -55,7 +55,7 @@ const RoomList = ({ chats, setChats, setMessages, selectedChatId, setSelectedCha
                 <IconButton
                   onClick={(e) => {
                     e.stopPropagation(); // ListItemButton으로 이벤트 전파 방지
-                    chat.repo_url && toggleRepoVisibility(chat.room_id); 
+                    chat.repo_url && toggleRepoVisibility(chat.room_id);
                   }}
                   sx={{ ml: 2 }} 
                 >
@@ -67,10 +67,10 @@ const RoomList = ({ chats, setChats, setMessages, selectedChatId, setSelectedCha
             </ListItem>
 
             {expandedChatId === chat.room_id && chat.repo_url && (
-              <Box sx={{ 
-                pt:1, 
-                pb:1, 
-                pl:3, 
+              <Box sx={{
+                pt:1,
+                pb:1,
+                pl:3,
                 pr:1,
                 bgcolor: darkMode ? "#1E1E1E" : "#f5f5f5" }
               }>
@@ -83,9 +83,9 @@ const RoomList = ({ chats, setChats, setMessages, selectedChatId, setSelectedCha
                     target="_blank"
                     rel="noopener noreferrer"
                     sx={{
-                      color: darkMode ? "#1E90FF" : "#1976d2", 
-                      textDecoration: "none", 
-                      "&:hover": { textDecoration: "underline" }, 
+                      color: darkMode ? "#1E90FF" : "#1976d2",
+                      textDecoration: "none",
+                      "&:hover": { textDecoration: "underline" },
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                     }}
